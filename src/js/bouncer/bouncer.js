@@ -731,6 +731,43 @@
 		};
 
 		/**
+		 * Validate all fields in a form or section
+		 * @param  {Node} target    The form or section to validate fields in
+		 * @return {Promise<Array>} An array of fields with errors
+		 */
+		publicAPIs.isValid = function (target) {
+			var getValidations = Array.prototype.map.call(target.querySelectorAll('input, select, textarea'), function (field) {
+				return publicAPIs.isFieldValid(field).then(function (validate) {
+					return validate && !validate.valid ? field : null;
+				});
+			});
+
+			return Promise.all(getValidations).then(function (validations) {
+				return validations.filter(Boolean);
+			});
+		};
+
+		/**
+		 * Validate a field
+		 * @param  {Node} field      The field to validate
+		 * @param  {Object} options  Validation options
+		 * @return {Promise<Object>} The validity state and errors
+		 */
+		publicAPIs.isFieldValid = function (field, options) {
+
+			// Don't validate submits, buttons, file and reset inputs, and disabled and readonly fields
+			if (field.disabled || field.readOnly || field.type === 'reset' || field.type === 'submit' || field.type === 'button') return Promise.resolve();
+
+			// Local settings
+			var _settings = extend(settings, options || {});
+
+			// Check for errors
+			return getErrors(field, _settings).then(function(isValid) {
+				return isValid;
+			});
+		};
+
+		/**
 		 * Run a validation on field blur
 		 */
 		var blurHandler = function (event) {
